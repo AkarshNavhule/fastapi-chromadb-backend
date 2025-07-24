@@ -22,12 +22,18 @@ import base64
 from google.cloud import firestore
 from ocr import process_image
 from fastapi.responses import JSONResponse
-
-
-
-OCR_URL = "http://localhost:1234/ocr"
+from fastapi.middleware.cors import CORSMiddleware 
 
 app = FastAPI(title="Flat Textbook RAG API")
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Your React frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
 
 @app.post("/upload_pdf")
 async def upload_pdf(file: UploadFile = File(...)):

@@ -2,7 +2,7 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from uuid import uuid4
 from pdf_processor import extract_text_chunks
 from vector_store import store_documents
-from search_engine import get_embedding, query_chroma, query_gemini, extract_page_filter
+from search_engine import get_embedding, query_chroma, query_gemini, extract_page_filter,query_gemini_ppt
 from models import (
     ChatRequest, ChatResponse, 
     QuestionPaperRequest, QuestionPaperResponse, 
@@ -142,3 +142,18 @@ async def execute_ocr(request: OcrRequest):
     decoded_bytes = base64.b64decode(request.base64)
     result = await process_image(decoded_bytes)
     return JSONResponse(content=result)
+@app.post("/create_ppt", response_model=ChatResponse)
+async def create_ppt(req: ChatRequest):
+    print("[main] /create_ppt")
+    emb  = get_embedding(req.prompt)
+    pf   = extract_page_filter(req.prompt)
+    hits = query_chroma(req.collection_name, emb, page_filter=pf)
+    context = "\n\n".join(f"(Page {h['metadata']['page_no']}): {h['text']}" for h in hits)
+    ans     = query_gemini_ppt(req.prompt, context)
+    print("[main] Returning answer + context")
+    return {
+        "answer": ans,
+        "context_with_pages": [
+            {"page_no": h["metadata"]["page_no"], "text": h["text"]} for h in hits
+        ]
+    }

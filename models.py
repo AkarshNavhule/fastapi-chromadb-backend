@@ -6,6 +6,9 @@ class ChatRequest(BaseModel):
     prompt: str
     collection_name: str
 
+class LeaderboardChatRequest(BaseModel):
+    prompt: str
+
 class ChatResponse(BaseModel):
     answer: str
     context_with_pages: list[dict]
@@ -22,11 +25,13 @@ class QuestionPaperResponse(BaseModel):
 
 class AnswerSheetCorrectionRequest(BaseModel):
     studentid: str
+    assignmentid: str
     images: List[bytes]  # FastAPI: Use List[UploadFile] in endpoint
     questionpaperdocfromfiretore: str
     subject: str
     chromadbcollectionname: str
     correctiontype: str  # "easy", "medium", or "hard"
+    classgrade:str
 
 class EachQuestionMark(BaseModel):
     question_no: str
@@ -40,6 +45,10 @@ class AnswerSheetCorrectionResponse(BaseModel):
     totalmarks: str  # e.g., "45/50"
     eachquestion_marks: List[EachQuestionMark]
     studentid: str
+    assignmentid: str
+    classgrade:str
+
+
     questionpaperdocfromfiretore: str
     subject: str
 

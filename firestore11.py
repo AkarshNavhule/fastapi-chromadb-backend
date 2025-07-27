@@ -1,6 +1,9 @@
 from google.cloud import firestore
 import os
 import re
+from datetime import datetime
+from typing import Dict, Any, Optional
+import logging
 
 # Optionally, set this if you're not setting it in your environment:
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "sahayak-d88d3-2e1f13a7b2bc.json"
@@ -98,3 +101,29 @@ def get_studentmarks(studentid: str) -> dict:
     else:
         print(f"[firestore] No document found for ID: {studentid}")
         return None
+
+
+
+
+
+# def student_performance(response: dict) -> str:
+    """
+    Stores the answer correction response in Firestore collection 'studentmarks'.
+    Uses studentid as Firestore document ID.
+
+    Args:
+        response (dict): The full correction API response.
+
+    Returns:
+        str: Firestore document ID
+    """
+    collection_ref = client.collection("studentperformance")
+    studentid = str(response.get("studentid"))
+    if not studentid:
+        raise ValueError("Response must include 'studentid'")
+    doc_id = response.get("classgrade")+"-"+studentid+"-"+response.get("assignmentid")
+
+    firestore_doc = dict(response)
+    collection_ref.document(doc_id).set(firestore_doc)
+    print(f"[firestore] Stored student marks for: {doc_id}")
+    return doc_id

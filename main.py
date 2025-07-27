@@ -6,24 +6,30 @@ from search_engine import get_embedding, query_chroma, query_gemini, extract_pag
 from models import (
     ChatRequest, ChatResponse, 
     QuestionPaperRequest, QuestionPaperResponse, 
-    AnswerSheetCorrectionResponse,OcrRequest
+    AnswerSheetCorrectionResponse,OcrRequest, LeaderboardChatRequest
 )
 from questionpaper import generate_question_paper
 from firestore11 import store_question_paper, get_question_paper,store_studentmarks
+from StudentLeaderboardVectorStore import fetch_firestore_collection, upload_to_chroma
+from GeminiChatModel import interactive_chat
 
 from ansheetcorrection import (
     run_ocr_sequential_internal,
     merge_ocr_results,
     correct_answers_single_rag
 )
+import os
+import boto3
 import chromadb
 from typing import List
 import base64
-from google.cloud import firestore
+from google.cloud import firestore 
+from google.cloud import storage
 from ocr import process_image
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware 
-
+import asyncio
+import aioboto3
 app = FastAPI(title="Flat Textbook RAG API")
 
 
@@ -92,6 +98,8 @@ async def correct_answersheet(
     studentid: str = Form(...),
     questionpaperdocfromfiretore: str = Form(...),
     subject: str = Form(...),
+    assignmentid: str = Form(...),
+    classgrade: str = Form(...),
     chromadbcollectionname: str = Form(...),
     correctiontype: str = Form(...)
 ):
@@ -113,8 +121,20 @@ async def correct_answersheet(
         "eachquestion_marks": details,
         "studentid": studentid,
         "questionpaperdocfromfiretore": questionpaperdocfromfiretore,
-        "subject": subject
+        "subject": subject,
+        "assignmentid": assignmentid
+        ,"classgrade": classgrade
     }
+    # process_assessment_response(resp)
+    # student_performance_resp= {"totalmarks": total,
+        # "studentid": studentid,
+        # "questionpaperdocfromfiretore": questionpaperdocfromfiretore,
+        # "subject": subject,
+        # "assignmentid": assignmentid
+        # ,"classgrade": classgrade,
+        # "createdtimestamp": firestore.SERVER_TIMESTAMP,}
+    # student_performance(student_performance_resp)
+
     store_studentmarks(resp)
     return resp
 
@@ -157,3 +177,197 @@ async def create_ppt(req: ChatRequest):
             {"page_no": h["metadata"]["page_no"], "text": h["text"]} for h in hits
         ]
     }
+
+
+@app.get("/upload_leaderboard_vector")
+async def upload_leaderboard_vector():
+    firestore_docs = fetch_firestore_collection("student_leaderboard")
+    
+    if not firestore_docs:
+        print("No documents found in Firestore collection. Exiting.")
+        return
+    
+    # Upload to ChromaDB
+    success = upload_to_chroma(firestore_docs)
+    
+    if success:
+        print("✅ Migration completed successfully!")
+    else:
+        print("❌ Migration failed!")
+        return {"message": "Migration failed!"}
+    return {"message": "Upload process completed."}
+
+@app.post("/chat_with_leaderboard")
+async def chat_with_leaderboard(req: LeaderboardChatRequest):
+    resp = {"answer": await interactive_chat(req.prompt)}
+    return resp
+
+
+
+# rekognition = boto3.client(
+#     'rekognition',
+#     aws_access_key_id='AKIARLPXLUEWWLRIZFW4',
+#     aws_secret_access_key='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',
+#     region_name='us-east-1'
+# )
+
+AWS_CONFIG = {
+    'aws_access_key_id': 'AKIARLPXLUEWWLRIZFW4',
+    'aws_secret_access_key': '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',
+    'region_name': 'us-east-1'
+}
+
+# Google Cloud Storage client
+storage_client = storage.Client()
+BUCKET_NAME = "studentimages1" 
+
+async def download_single_blob_async(blob):
+    """Async download of a single blob"""
+    try:
+        student_name = os.path.splitext(blob.name)[0]
+        # Run the blocking download in thread pool
+        loop = asyncio.get_event_loop()
+        image_bytes = await loop.run_in_executor(
+            None, 
+            blob.download_as_bytes
+        )
+        print(f"   • downloaded {blob.name} → {student_name}")
+        return student_name, image_bytes
+    except Exception as e:
+        print(f"   ⚠️  Error downloading {blob.name}: {e}")
+        return None, None
+
+async def get_student_images_from_bucket_async() -> dict:
+    """
+    Async version: Download all student images from GCS bucket concurrently
+    """
+    try:
+        print("📥  Fetching student list from GCS bucket …")
+        bucket = storage_client.bucket(BUCKET_NAME)
+        
+        # Get list of blobs (this is still sync, but fast)
+        blobs = list(bucket.list_blobs())
+        image_blobs = [
+            blob for blob in blobs 
+            if blob.name.lower().endswith((".jpg", ".jpeg", ".png"))
+        ]
+        
+        if not image_blobs:
+            print("   No image files found in bucket")
+            return {}
+        
+        print(f"📁  Found {len(image_blobs)} images, downloading concurrently …")
+        
+        # Download all images concurrently
+        download_tasks = [
+            download_single_blob_async(blob) 
+            for blob in image_blobs
+        ]
+        
+        # Wait for all downloads to complete
+        results = await asyncio.gather(*download_tasks, return_exceptions=True)
+        
+        # Filter out failed downloads and create student dict
+        student_images = {}
+        successful_downloads = 0
+        
+        for result in results:
+            if isinstance(result, tuple) and result[0] and result[1]:
+                student_name, image_bytes = result
+                student_images[student_name] = image_bytes
+                successful_downloads += 1
+            elif isinstance(result, Exception):
+                print(f"   ⚠️  Download exception: {result}")
+        
+        print(f"✅  Successfully downloaded {successful_downloads}/{len(image_blobs)} images\n")
+        return student_images
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"GCS access error: {e}")
+
+async def check_student(group_img: bytes,
+                        student_name: str,
+                        student_img: bytes,
+                        threshold: int = 80) -> tuple:
+    """
+    Async call to Rekognition → returns (name, "present"/"absent")
+    """
+    print(f"🔍  Comparing {student_name} …")
+    session = aioboto3.Session()
+    async with session.client("rekognition", **AWS_CONFIG) as rek:
+        try:
+            result = await rek.compare_faces(
+                SourceImage = {"Bytes": student_img},
+                TargetImage = {"Bytes": group_img},
+                SimilarityThreshold = threshold
+            )
+            status = "present" if result["FaceMatches"] else "absent"
+            print(f"   → {student_name}: {status}")
+            return student_name, status
+        except Exception as e:
+            print(f"   ⚠️  {student_name}: error → {e}")
+            return student_name, "absent"
+
+# ─── API endpoint ───────────────────────────────────────────────────────────────
+@app.post("/attendance")
+async def mark_attendance(targetimage: UploadFile = File(...)):
+    """
+    Upload a group photo; returns {"alice": "present", "bob": "absent", …}
+    Now with fully async bucket fetching!
+    """
+    print("\n===== New /attendance request =====")
+    
+    # Start group image read and bucket fetch concurrently
+    print("🚀  Starting concurrent operations: group image read + bucket fetch")
+    
+    group_read_task = targetimage.read()
+    bucket_fetch_task = get_student_images_from_bucket_async()
+    
+    # Wait for both operations to complete
+    group_bytes, students = await asyncio.gather(
+        group_read_task,
+        bucket_fetch_task
+    )
+    
+    print(f"👥  Group image: {targetimage.filename} ({len(group_bytes)//1024} KB)")
+    
+    if not students:
+        raise HTTPException(status_code=404, detail="No student images in bucket")
+
+    print(f"🎯  Starting face recognition for {len(students)} students …")
+    
+    # Kick off concurrent Rekognition calls
+    recognition_tasks = [
+        check_student(group_bytes, name, img)
+        for name, img in students.items()
+    ]
+    results = await asyncio.gather(*recognition_tasks)
+
+    attendance = dict(results)
+    print(f"📊  Final attendance: {attendance}\n")
+    return attendance
+
+@app.get("/students")
+async def list_students():
+    """Get list of all students in the bucket"""
+    try:
+        bucket = storage_client.bucket(BUCKET_NAME)
+        blobs = bucket.list_blobs()
+        
+        students = []
+        for blob in blobs:
+            if blob.name.lower().endswith(('.jpg', '.jpeg', '.png')):
+                student_name = os.path.splitext(blob.name)[0]
+                students.append(student_name)
+        
+        return {"students": students, "total": len(students)}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error listing students: {str(e)}") 
+    
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "sahayak-d88d3-2e1f13a7b2bc.json"    
+db = firestore.Client()
+@app.get("/leaderboard")
+async def get_leaderboard():
+    students = db.collection('student_leaderboard').order_by('rank').stream()
+    return [student.to_dict() for student in students]

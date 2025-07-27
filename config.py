@@ -9,7 +9,7 @@ CHROMA_DB_DIR = os.path.abspath(_raw)
 
 GEMINI_API_KEY   = os.getenv("GEMINI_API_KEY")
 EMBEDDING_MODEL  = "gemini-embedding-001"
-GENERATION_MODEL = "gemini-2.5-flash"
+GENERATION_MODEL = "gemini-2.5-flash-lite"
 TOP_K            = 10
 
 print(f"[config] Working dir: {os.getcwd()}")

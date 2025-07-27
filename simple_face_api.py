@@ -4,8 +4,8 @@ import os
 # Add your credentials directly
 rekognition = boto3.client(
     'rekognition',
-    aws_access_key_id='AKIARLPXLUEWWLRIZFW4',       
-    aws_secret_access_key='6Kaiu1Y4WLsakdRRpZ7GyMSw/hHsvMmuhMI6c5g4', 
+    aws_access_key_id='',       
+    aws_secret_access_key='', 
     region_name='us-east-1'                        
 )
 

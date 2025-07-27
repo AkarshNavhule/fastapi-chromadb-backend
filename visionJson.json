@@ -1,13 +1,1 @@
-{
-  "type": "service_account",
-  "project_id": "sahayak-d88d3",
-  "private_key_id": "d07fe1481b60d8d25be4a990e7e988f2657e1e9b",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCN0enesbSjrSXi\nmtuzjq1HZv0u0JoSaCJLP81PpTtWC++G8eMgsaQ7c++/WFj9zU0wzpPacWPEzjP+\nshzrDPwILuD3wfge7LFPHDIydC8WmAjYMQVPehVTtqkLBOIiY9jaRBi9oSvMjGMJ\naUnFY92GImVjqqxWtNMf5tJaUPe/gNfhik0C1SZay5+PisM5ZNq7xM5bd7xmA6hC\nADQ1DwwJR2mjy6TJ2aPz9L7h2y7Ktvz55ulPGbMnjfWFcqCeSjWeMEnxckV0hnTZ\np3VMHcBjv2Ixcl1+gO4Hejh/qt3iGQACuHFoLoPOdY1RHu1SAsL08q4EliH3vPkj\n1yVizRc9AgMBAAECggEAA7fCFwYXFQ34tu5PpKJXCg7NEKSQz9TRhohhzQnCmrPQ\n5jt7zgz1U0arvUGNm0exLP6fxlbGVaMA0ddtZfJCJPYscrcWMCKNCmS6YlnrExjn\n7UApu+0YiohSRnLs37E45Q3q2evHK2m7V4ReVfgGfZnz72JkLRi4vfa0QubDYk6H\n7c4e0vq5JdyaOR0ncvA1lawG1/XRsDAfulR3gxbqkxtNViqJzqpKTbZ4NvMFWdPR\nEs0ElyH+hfSKTO9o+gHzHYxfyLHo0QdrJMx1uApgn4O9vVTUWMGHgs0o0XLb1V68\nj6RezAN8m5rBqj6hHcfQLukALVBEqVSZnvK1MrCW4QKBgQDGkPYZ88isDm62wLY+\ngEs+hhM2Pp08EmrPCu9+x8ovNpKW8jg9lzqEE7bqSA85yo21/2MEpL+0UD8Lo5hH\nIsXkm/a5Lc+hKZLJKRZwmXDJDPUrZ1e1VCRRHeZoU/hJGWolvq/f6rzmEt1/ZrCP\n4rwv5ubP/tgcNdzjs4q3wwi6HQKBgQC21x3cop/z1l9TWEqtq8rk71qK4B3h0BFJ\nrUmbnjaZwII6n2pqXRTMoDH6+2Ai24aEibBlLPj918DV3AZ0H0VMXhD8fiec9qGp\naEh28sdUrXrDaSDKsT7mCkBb/zFhcIcq6TtdvDFW0nMJz3oLoPrPae0KMXQ1ZRCs\nqGcMetpHoQKBgGg1R5LTJ+t0H5J1jK88cUC86HQ9ZBNUrw09dfcZLvicMU5ajD12\nklUia4qEiskPjlOHVhXnyFv/CTc4ggBDNYwGdfM1IZQ41zoPACHTxSceT8SZlaQq\nJm0Tvgnel5z1Y4mvi2l+Leio2em0oNDCc3TIPzXFTvFvKx+s6A4MoxXZAoGANLZD\n564CyzuMc+zKatNSRTo0MkF2m/luYn1Q8Upll2IGqXv4I/391xiAEEmUZ7g+Scug\nTSrwBc7Dy2QJgETbp66e2wxLw1bfOIXWDmTjzqfM8rVGPOlops1hzKP/yoW0kkx3\nTwjIeK1nePaVyvB4Hn/9VKj5RcODUSOjwddRQsECgYAtXhVga/rXvv2inYgE5/FS\nHRqCIWc8aKMwjMma+AhMJs57n5wcmav6d0DWOrDv6+wnJXDYJCVuxy/qSyHlnXII\n3Lq3iskXElyawLsESraawmjSVcgdhmkqBZISO9WcHZr1+Ku5buWGkMNazkByyGhq\nya3TthP8Ix7tWrSveaqgqw==\n-----END PRIVATE KEY-----\n",
-  "client_email": "vision-sprint1@sahayak-d88d3.iam.gserviceaccount.com",
-  "client_id": "106595797571333641868",
-  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-  "token_uri": "https://oauth2.googleapis.com/token",
-  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/vision-sprint1%40sahayak-d88d3.iam.gserviceaccount.com",
-  "universe_domain": "googleapis.com"
-}
+
